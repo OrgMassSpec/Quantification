@@ -1,0 +1,32 @@
+# Quantification 
+```{r, message=FALSE}
+library(tidyverse)
+```
+Test data set containing peak integration data for calibration standards, laboratory and field blanks, and samples. Single analyte. 
+```{r message=FALSE}
+x <- read_csv("TestData.csv")
+IntStdConc <- 5 # ppb, TODO double check concentration of IS
+```
+Subset calibration standards and generate calibration curve.
+TODO: Make linear model and put n, equation, r2 in subtitle.
+```{r fig.height=4, fig.width=5}
+calibration_data <- x %>% 
+  filter(Type == "Cal") %>%
+  mutate(calResponseRatio = TargetResponse / IntStdResponse,
+         calAmountRatio = ExptConc / IntStdConc)
+
+lm_result <- summary(lm(calibration_data$calResponseRatio ~ calibration_data$calAmountRatio))
+
+calibration_curve <- ggplot(calibration_data, aes(calAmountRatio, calResponseRatio)) +
+    #facet_wrap(~) +
+    geom_smooth(method = lm) +
+    geom_point() +
+    labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
+    labs(title = 'Calibration Curve', subtitle = "Nicotine (Target/IS)") +
+    geom_rug() +
+    theme_bw()
+print(calibration_curve)
+```
+
+
+
