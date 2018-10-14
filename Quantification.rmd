@@ -3,12 +3,12 @@
 library(tidyverse)
 ```
 Test data set containing peak integration data for calibration standards, laboratory and field blanks, and samples. Single analyte. 
+TODO double check concentration of IS
 ```{r message=FALSE}
 x <- read_csv("TestData.csv")
-IntStdConc <- 5 # ppb, TODO double check concentration of IS
+IntStdConc <- 5 # ppb
 ```
 Subset calibration standards and generate calibration curve.
-TODO: Make linear model and put n, equation, r2 in subtitle.
 ```{r fig.height=4, fig.width=5}
 calibration_data <- x %>% 
   filter(Type == "Cal") %>%
@@ -19,10 +19,14 @@ lm_result <- summary(lm(calibration_data$calResponseRatio ~ calibration_data$cal
 
 calibration_curve <- ggplot(calibration_data, aes(calAmountRatio, calResponseRatio)) +
     #facet_wrap(~) +
-    geom_smooth(method = lm) +
-    geom_point() +
+    geom_smooth(method = lm, color = "grey", size = 1) +
+    geom_point(shape = 21, colour = "red", fill = NA, size = 3, stroke = 1.5) +
     labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
-    labs(title = 'Calibration Curve', subtitle = "Nicotine (Target/IS)") +
+    labs(title = 'Calibration Curve, Nicotine (Target/IS)', 
+         subtitle = paste('n=', nrow(calibration_data), 
+                          ', slope=', signif(lm_result$coefficients[2,1], 3), 
+                          ', intercept=', signif(lm_result$coefficients[1,1], 3),
+                          ', multiple R-squared=', signif(lm_result$r.squared, 3), sep = '')) +
     geom_rug() +
     theme_bw()
 print(calibration_curve)
