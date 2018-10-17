@@ -1,6 +1,8 @@
 # Quantification 
 ```{r, message=FALSE}
 library(tidyverse)
+library(knitr)
+library(kableExtra)
 ```
 Test data set containing peak integration data for calibration standards, laboratory and field blanks, and samples. Single analyte. 
 TODO double check concentration of IS
@@ -30,6 +32,14 @@ calibration_curve <- ggplot(calibration_data, aes(calAmountRatio, calResponseRat
     geom_rug() +
     theme_bw()
 print(calibration_curve)
+```
+```{r}
+options(digits = 3)
+calibration_data %>%
+  #select(1:10) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+  scroll_box(width = "100%", height = "200px")
 ```
 
 
