@@ -33,6 +33,28 @@ calibration_curve <- ggplot(calibration_data, aes(calAmountRatio, calResponseRat
     theme_bw()
 print(calibration_curve)
 ```
+```{r fig.height=4, fig.width=5}
+calibration_data <- x %>% 
+  filter(Type == "Cal") %>%
+  mutate(calResponseRatio = TargetResponse / IntStdResponse,
+         calAmountRatio = ExptConc / IntStdConc)
+
+lm_result <- summary(lm(calibration_data$calResponseRatio ~ calibration_data$calAmountRatio))
+
+calibration_curve <- ggplot(calibration_data, aes(calAmountRatio, calResponseRatio, label = ExptConc)) +
+  #facet_wrap(~) +
+  geom_smooth(method = lm, color = "grey", size = 1) +
+  geom_point(shape = 21, colour = "red", fill = NA, size = 3, stroke = 1.5) +
+  labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
+  labs(title = 'Log Scale Selection Calibration Curve, Nicotine') +
+  geom_rug() +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_text(size = 4, color = "red", vjust = -0.5, hjust = 0, nudge_x = -0.5) +
+  theme_bw()
+print(calibration_curve)
+```
+
 ```{r}
 options(digits = 3)
 calibration_data %>%
