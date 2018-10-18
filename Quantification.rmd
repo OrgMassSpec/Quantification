@@ -78,11 +78,11 @@ calibration_curve_log <- ggplot() +
              shape = 21, colour = "red", fill = NA, size = 3, stroke = 1.5) +
   geom_point(data = sample_data,
              aes(x = amount/IntStdConc, y = calResponseRatio)) +
-  xlim(NA, 10) +
-  ylim(NA, 25) +
-  # geom_text(calibration_data,
-  #           aes(calAmountRatio, calResponseRatio, label = ExptConc),
-  #           size = 4, color = "red", vjust = -0.5, hjust = 0, nudge_x = -0.5) +
+  xlim(NA, 50) +
+  ylim(NA, 100) +
+  geom_text(mapping = aes(calAmountRatio, calResponseRatio, label = ExptConc),
+            data = calibration_data,
+            size = 4, color = "red", vjust = -0.5, hjust = 0, nudge_x = -0.5) +
   # scale_x_log10() +
   # scale_y_log10() +
   labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
@@ -90,5 +90,4 @@ calibration_curve_log <- ggplot() +
   theme_bw()
 print(calibration_curve_log)
 ```
-
-
+Implement shiny plot to find ranges. 
