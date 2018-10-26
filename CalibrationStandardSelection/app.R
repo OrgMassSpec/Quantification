@@ -72,7 +72,12 @@ server <- function(input, output) {
    
    output$calibrationCurve <- renderPlot({
      
-     calibration_curve_log <- ggplot() +
+     # Filter calibration curve by selection
+     
+     calibration_data <- calibration_data %>% 
+       filter(ExptConc %in% input$checkGroup)
+     
+     calibration_curve <- ggplot() +
        geom_smooth(data = calibration_data, 
                    aes(calAmountRatio, calResponseRatio), 
                    method = lm, color = "grey", size = 1) +
@@ -81,15 +86,13 @@ server <- function(input, output) {
                   shape = 21, colour = "red", fill = NA, size = 3, stroke = 1.5) +
        geom_point(data = sample_data,
                   aes(x = amount/IntStdConc, y = calResponseRatio)) +
-       xlim(NA, 50) +
-       ylim(NA, 100) +
        geom_text(mapping = aes(calAmountRatio, calResponseRatio, label = ExptConc),
                  data = calibration_data,
                  size = 4, color = "red", vjust = -0.5, hjust = 0, nudge_x = -0.5) +
        labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
        labs(title = 'Selection Calibration Curve, Nicotine') +
        theme_bw()
-     print(calibration_curve_log)
+     print(calibration_curve)
    })
    
    # You can access the values of the widget (as a vector)
