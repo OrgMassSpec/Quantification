@@ -90,7 +90,12 @@ server <- function(input, output) {
                  data = calibration_data,
                  size = 4, color = "red", vjust = -0.5, hjust = 0, nudge_x = -0.5) +
        labs(x = 'Amount Ratio (ng/mL)', y = 'Response Ratio') +
-       labs(title = 'Selection Calibration Curve, Nicotine') +
+       #labs(title = 'Selection Calibration Curve, Nicotine') +
+       labs(title = 'Calibration Curve, Nicotine (Target/IS)', 
+            subtitle = paste('n=', nrow(calibration_data), 
+                             ', slope=', signif(lm_result$coefficients[2,1], 3), 
+                             ', intercept=', signif(lm_result$coefficients[1,1], 3),
+                             ', multiple R-squared=', signif(lm_result$r.squared, 3), sep = '')) +
        theme_bw()
      print(calibration_curve)
    })
