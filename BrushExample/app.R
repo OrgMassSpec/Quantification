@@ -8,6 +8,7 @@ library(ggplot2)
 ui <- fluidPage(
   fluidRow(
     column(width = 4, class = "well",
+           
            h4("Brush and double-click to zoom"),
            plotOutput("plot1", height = 300,
                       dblclick = "plot1_dblclick",
@@ -18,12 +19,15 @@ ui <- fluidPage(
            )
     ),
     column(width = 8, class = "well",
-           h4("Left plot controls right plot"),
+           
+           # start of 2 columns for plots
+           h4("Brush left plot to zoom. Left plot controls right plot."),
+           
            fluidRow(
              column(width = 6,
                     plotOutput("plot2", height = 300,
                                brush = brushOpts(
-                                 id = "plot2_brush",
+                                 id = "plot2_brush", #####
                                  resetOnNew = TRUE
                                )
                     )
@@ -31,7 +35,7 @@ ui <- fluidPage(
              column(width = 6,
                     plotOutput("plot3", height = 300)
              )
-           )
+           ) # end section for 2 plots
     )
     
   )
@@ -67,11 +71,13 @@ server <- function(input, output) {
   # Linked plots (middle and right)
   ranges2 <- reactiveValues(x = NULL, y = NULL)
   
+  # plot 2 is main plot
   output$plot2 <- renderPlot({
     ggplot(mtcars, aes(wt, mpg)) +
       geom_point()
   })
   
+  # plot 3 is zoomed plot
   output$plot3 <- renderPlot({
     ggplot(mtcars, aes(wt, mpg)) +
       geom_point() +
