@@ -46,6 +46,14 @@ ui <- fluidPage(
       # Show a plot of the generated distribution
       mainPanel(
          plotOutput("calibrationCurve")
+         
+         # plotOutput("calibrationCurve",
+         #            dblclick = "calibrationCurve_dblclick",
+         #            brush = brushOpts(
+         #              id = "calibrationCurve_brush",
+         #              resetOnNew = TRUE
+         #            )
+         # )
       )
    ),
    
@@ -70,6 +78,8 @@ server <- function(input, output) {
    #    hist(x, breaks = bins, col = 'darkgray', border = 'white')
    #    })
    
+  #ranges <- reactiveValues(x = NULL, y = NULL)
+  
    output$calibrationCurve <- renderPlot({
      
      # Filter calibration curve by selection
@@ -77,9 +87,13 @@ server <- function(input, output) {
      calibration_data <- calibration_data %>% 
        filter(ExptConc %in% input$checkGroup)
      
+     # TODO Remove sample points outside of calibration point range. Remove brush?
+     
+     # TODO Show data frame of sample points within current calibration point range
+     
      calibration_curve <- ggplot() +
-       geom_smooth(data = calibration_data, 
-                   aes(calAmountRatio, calResponseRatio), 
+       geom_smooth(data = calibration_data,
+                   aes(calAmountRatio, calResponseRatio),
                    method = lm, color = "grey", size = 1) +
        geom_point(data = calibration_data,
                   aes(calAmountRatio, calResponseRatio),
@@ -96,8 +110,26 @@ server <- function(input, output) {
                              ', slope=', signif(lm_result$coefficients[2,1], 3), 
                              ', intercept=', signif(lm_result$coefficients[1,1], 3),
                              ', multiple R-squared=', signif(lm_result$r.squared, 3), sep = '')) +
+       
+       #coord_cartesian(xlim = c(0,250), ylim = c(0,500), expand = TRUE) +
+       
+       #coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE) +
        theme_bw()
+      
+     
      print(calibration_curve)
+   })
+   
+   observeEvent(input$calibrationCurve_dblclick, {
+     brush <- input$calibrationCurve_brush
+     if (!is.null(brush)) {
+       ranges$x <- c(brush$xmin, brush$xmax)
+       ranges$y <- c(brush$ymin, brush$ymax)
+       
+     } else {
+       ranges$x <- NULL
+       ranges$y <- NULL
+     }
    })
    
    # You can access the values of the widget (as a vector)
