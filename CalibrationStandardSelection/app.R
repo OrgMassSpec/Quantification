@@ -1,6 +1,3 @@
-## This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-
 library(shiny)
 library(tidyverse)
 
@@ -12,15 +9,9 @@ calibration_data <- x %>%
   mutate(calResponseRatio = TargetResponse / IntStdResponse,
          calAmountRatio = ExptConc / IntStdConc)
 
-lm_result <- summary(lm(calibration_data$calResponseRatio ~ calibration_data$calAmountRatio))
-
-slope <- signif(lm_result$coefficients[2,1], 3) 
-intercept <- signif(lm_result$coefficients[1,1], 3)
-
 sample_data <- x %>%
   filter(Type == "Sample") %>%
-  mutate(calResponseRatio = TargetResponse / IntStdResponse,
-         amount = (calResponseRatio - intercept) * (IntStdConc / slope))
+  mutate(calResponseRatio = TargetResponse / IntStdResponse)
 
 ckbox <- paste0("'", calibration_data$SampleName, "'", "=", calibration_data$ExptConc, collapse = ",")
 
@@ -33,11 +24,6 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-         # sliderInput("bins",
-         #             "Number of bins:",
-         #             min = 1,
-         #             max = 50,
-         #             value = 30)
         checkboxGroupInput("checkGroup", label = h3("Calibration Levels (ng/mL)"), 
                            choices = c(calibration_data$ExptConc),
                            selected = c(calibration_data$ExptConc))
@@ -46,39 +32,15 @@ ui <- fluidPage(
       # Show a plot of the generated distribution
       mainPanel(
          plotOutput("calibrationCurve")
-         
-         # plotOutput("calibrationCurve",
-         #            dblclick = "calibrationCurve_dblclick",
-         #            brush = brushOpts(
-         #              id = "calibrationCurve_brush",
-         #              resetOnNew = TRUE
-         #            )
-         # )
       )
    ),
    
-   # Copy the chunk below to make a group of checkboxes
-   # checkboxGroupInput("checkGroup", label = h3("Calibration Levels"), 
-   #                    choices = list("Choice 1" = 1, "Choice 2" = 2, "Choice 3" = 3),
-   #                    selected = 1),
- 
    hr(),
    fluidRow(column(3, verbatimTextOutput("value")))
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
-   # output$distPlot <- renderPlot({
-   #    # generate bins based on input$bins from ui.R
-   #    x    <- faithful[, 2] 
-   #    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-   #    
-   #    # draw the histogram with the specified number of bins
-   #    hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   #    })
-   
-  #ranges <- reactiveValues(x = NULL, y = NULL)
   
    output$calibrationCurve <- renderPlot({
      
@@ -87,7 +49,15 @@ server <- function(input, output) {
      calibration_data <- calibration_data %>% 
        filter(ExptConc %in% input$checkGroup)
      
-     # TODO Remove sample points outside of calibration point range. Remove brush?
+     lm_result <- summary(lm(calibration_data$calResponseRatio ~ calibration_data$calAmountRatio))
+     slope <- signif(lm_result$coefficients[2,1], 3) 
+     intercept <- signif(lm_result$coefficients[1,1], 3)
+     
+     data_range <- range(calibration_data$calResponseRatio)
+
+     sample_data <- sample_data %>%
+       filter(calResponseRatio < data_range[2], calResponseRatio > data_range[1]) %>%
+       mutate(amount = (calResponseRatio - intercept) * (IntStdConc / slope))
      
      # TODO Show data frame of sample points within current calibration point range
      
@@ -110,10 +80,6 @@ server <- function(input, output) {
                              ', slope=', signif(lm_result$coefficients[2,1], 3), 
                              ', intercept=', signif(lm_result$coefficients[1,1], 3),
                              ', multiple R-squared=', signif(lm_result$r.squared, 3), sep = '')) +
-       
-       #coord_cartesian(xlim = c(0,250), ylim = c(0,500), expand = TRUE) +
-       
-       #coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE) +
        theme_bw()
       
      
