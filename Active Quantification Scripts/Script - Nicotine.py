@@ -1,7 +1,7 @@
 #%% [markdown] 
-# # Quantify Cotinine (100 uL sample size)
+# # Quantify Nicotine (wipe, dust, wristband)
 #
-# Accounts for 20 fold dilution. Sample size is 100 uL of urine (20x lower than the 2 mL typical size), and add 1900 uL water to a total volumen of 2 mL. Then spike IS and work up as normal (100 uL of 0.1 ng/uL cotinine-d3, or 10 ng cotinine-d3). After quantifying, multiply by 20 to get original concentration.
+# Sample is undiluted. The nicotine quantification is reported as ng/mL in the autosampler vial. This concentration needs to be converted to nicotine mass prior to submission.
 #
 # Throughout code, TC = Target Compound, IS = Internal Standard
 
@@ -15,8 +15,8 @@ import altair as alt
 from vega_datasets import data
 
 # User variables
-file_name = 'Cotinine 100uL Template Test Data' # Input Excel filename
-analyte = 'Cotinine Conc. (ng/mL)' # Analyte concentration and units for export column title 
+file_name = 'Nicotine Template Test Data' # Input Excel filename
+analyte = 'Nicotine Conc. (ng/mL)' # Analyte concentration and units for export column title 
 IS_Conc = 5 # Internal standard concentration (ng/mL)
 
 #%% [markdown]
@@ -229,8 +229,7 @@ df_cal_2
 plt.figure(figsize=(7.5,3.5))
 
 plt.subplot(1, 2, 1)
-plt.scatter(df_spl_1['Measured_Conc_Ratio'], df_spl_1['Response_Ratio'], 
-    color = 'black', label = 'Sample') # Samples
+plt.scatter(df_spl_1['Measured_Conc_Ratio'], df_spl_1['Response_Ratio'], color = 'black', label = 'Sample') # Samples
 plt.scatter(x_train_1, y_train_1, color = 'red', label = 'Standard') # Calibration points
 plt.plot(x_train_1, lm_1.predict(x_train_1), color = 'red') # Calibration curve
 plt.title('Set 1 Full Scale Cal. Curve')
@@ -241,24 +240,22 @@ plt.legend()
 plt.annotate('$R^2$ = ' + str(R_squared_1), xy = (0.125, 0.7), xycoords = 'figure fraction')
 
 plt.subplot(1, 2, 2)
-plt.scatter(df_spl_2['Measured_Conc_Ratio'], df_spl_2['Response_Ratio'], 
-    color = 'black', label = 'Sample') # Samples
+plt.scatter(df_spl_2['Measured_Conc_Ratio'], df_spl_2['Response_Ratio'], color = 'black', label = 'Sample') # Samples
 plt.scatter(x_train_2, y_train_2, color = 'red', label = 'Standard') # Calibration points
 plt.plot(x_train_2, lm_2.predict(x_train_2), color = 'red') # Calibration curve
 plt.title('Set 2 Full Scale Cal. Curve')
 plt.xlabel('TC/IS Concentration Ratio') 
 plt.legend()
-plt.annotate('$R^2$ = ' + str(R_squared_2), xy = (0.625, 0.7), 
-    xycoords = 'figure fraction')
+plt.annotate('$R^2$ = ' + str(R_squared_2), xy = (0.625, 0.7), xycoords = 'figure fraction')
 
-plt.savefig(file_name + ' 4 Corrected Calibration Curves.png', 
-    dpi = 600, bbox_inches = 'tight')
+plt.savefig(file_name + ' 4 Corrected Calibration Curves.png', dpi = 600, bbox_inches = 'tight')
 plt.close()
 # plt.show()
 
 #%% [markdown]
 # ## Export to Excel
-# Correct for sample dilution 
+# Sample is not diluted. 
+# 
 
 #%% Export data
 df_spl_1['Set'] = 'Set 1'
@@ -274,48 +271,32 @@ table_position_unc = len(df_cal.index)
 df_spl_combined = df_spl_1.append(df_spl_2)
 
 # Check for and correct result for any TC peak area set to zero
-df_spl_combined.loc[df_spl_combined['TC_Response'] == 0, 
-    ['Measured_TC_Conc']] = 0
-df_spl_combined.loc[df_spl_combined['TC_Response'] == 0, 
-    ['Measured_Conc_Ratio']] = 0
+df_spl_combined.loc[df_spl_combined['TC_Response'] == 0, ['Measured_TC_Conc']] = 0
+df_spl_combined.loc[df_spl_combined['TC_Response'] == 0, ['Measured_Conc_Ratio']] = 0
  
 # Dataframe for primary export
-# Measured_TC_Conc is the concentration in the vial (the diluted form, ng/mL)
-df_spl_combined_export = df_spl_combined.loc[:, ['SampleID', 
-    'IS_Recovery', 'Measured_TC_Conc']].sort_index()
+df_spl_combined_export = df_spl_combined.loc[:, ['SampleID', 'IS_Recovery', 'Measured_TC_Conc']].sort_index()
 df_spl_combined_export['Batch'] = file_name
-df_spl_combined_export['Cotinine in Urine (ng cotinine / mL urine)'] = df_spl_combined_export['Measured_TC_Conc'] * 20
-df_spl_combined_export = df_spl_combined_export.loc[:, ['Batch', 
-    'SampleID', 'IS_Recovery', 'Measured_TC_Conc', 
-    'Cotinine in Urine (ng cotinine / mL urine)']]
+df_spl_combined_export = df_spl_combined_export.loc[:, ['Batch', 'SampleID', 'IS_Recovery', 'Measured_TC_Conc']]
 
 # Compare corrected to initial quantification results and MassHunter results
 df_spl_for_merge = df_spl.loc[:, ['SampleID', 'Measured_TC_Conc']]
-df_comparison = pd.merge(df_spl_combined_export, df_spl_for_merge, 
-    how='outer', on='SampleID')
-df_comparison['Percent_Difference'] = ((abs(df_comparison['Measured_TC_Conc_x'] -
-    df_comparison['Measured_TC_Conc_y']) / 
-    df_comparison['Measured_TC_Conc_y']) * 100)
-df_comparison = pd.merge(df_comparison, df_spl_MassHunter, 
-    how='outer', on='SampleID')
-df_comparison_sorted = df_comparison.sort_values(by=['Percent_Difference'], 
-    ascending=False)
+df_comparison = pd.merge(df_spl_combined_export, df_spl_for_merge, how='outer', on='SampleID')
+df_comparison['Percent_Difference'] = (abs(df_comparison['Measured_TC_Conc_x'] - df_comparison['Measured_TC_Conc_y']) / df_comparison['Measured_TC_Conc_y']) * 100
+df_comparison = pd.merge(df_comparison, df_spl_MassHunter, how='outer', on='SampleID')
+df_comparison_sorted = df_comparison.sort_values(by=['Percent_Difference'], ascending=False)
 df_comparison_sorted = df_comparison_sorted.rename(index=str, 
-    columns={'Measured_TC_Conc_x':'Measured_TC_Conc_Corrected', 
-    'Measured_TC_Conc_y':'Measured_TC_Conc_Uncorrected', 
+    columns={'Measured_TC_Conc_x':'Measured_TC_Conc_Corrected', 'Measured_TC_Conc_y':'Measured_TC_Conc_Uncorrected', 
     'Analyte_CalcConc':'Measured_TC_Conc_MassHunter'})
 
 # Create a Pandas Excel writer using XlsxWriter as the engine.
 writer = pd.ExcelWriter(file_name + ' Results' + '.xlsx', engine='xlsxwriter')
-df_spl_combined_export = df_spl_combined_export.rename(index=str, 
-    columns={'Measured_TC_Conc':analyte})
+df_spl_combined_export = df_spl_combined_export.rename(index=str, columns={'Measured_TC_Conc':analyte})
 df_spl_combined_export.to_excel(writer, sheet_name='Export')
 df_comparison_sorted.to_excel(writer, sheet_name='Comparison')
 df_spl_combined.to_excel(writer, sheet_name='Corrected_Samples')
 df_cal_1.to_excel(writer, sheet_name='Corrected_Calibration')
-df_cal_2.to_excel(writer, sheet_name='Corrected_Calibration', 
-    startrow=table_position_cal + 2)
+df_cal_2.to_excel(writer, sheet_name='Corrected_Calibration', startrow=table_position_cal + 2)
 df_cal.to_excel(writer, sheet_name='Uncorrected_Data')
-df_spl.to_excel(writer, sheet_name='Uncorrected_Data', 
-    startrow=table_position_unc + 2)
+df_spl.to_excel(writer, sheet_name='Uncorrected_Data', startrow=table_position_unc + 2)
 writer.save()
