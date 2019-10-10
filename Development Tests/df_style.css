@@ -1,0 +1,73 @@
+/* includes alternating gray and white with on-hover color */
+
+.mystyle {
+    font-size: 10pt; 
+    font-family: monospace;
+    border-collapse: collapse; 
+    border: 1px solid silver;
+    text-align: right
+
+}
+
+.mystyle td, th {
+    padding: 1px;
+}
+
+.mystyle tr:nth-child(even) {
+    background: #E0E0E0;
+}
+
+.mystyle tr:hover {
+    background: rgb(116, 238, 15);
+    cursor: pointer;
+} 
+
+.box {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.one {
+    flex: 1;
+}
+
+.two {
+    flex: 1;
+}
+
+.one_alt {
+    flex: 1;
+}
+
+.two_alt {
+    flex: 1;
+}
+
+.one_alt2 {
+    display: flex;
+    justify-content: center;
+}
+
+h1 {
+    color: red;
+    font-family: monospace;
+}
+
+h2 {
+    color: blue;
+    font-family: monospace;
+}
+
+h3 {
+    color: rgb(243, 125, 29);
+    font-family: monospace;
+}
+
+p {
+    font-family: monospace;
+}
+
+.title {
+    color: orangered;
+    font-size: 12pt;
+}
