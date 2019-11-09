@@ -7,6 +7,7 @@ import numpy as np
 from sklearn import linear_model
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
+import os  
 import altair as alt
 from vega_datasets import data
 
@@ -60,21 +61,21 @@ def highlight_accuracy(s):
     Highlight poor accuracy values.
     '''
     is_accuracy = (s >= 110) | (s <= 90)
-    return ['background-color: yellow' if v else '' for v in is_accuracy]
+    return ['background-color: #FFC5D0' if v else '' for v in is_accuracy]
 
 def highlight_difference(s):
     '''
     Highlight large percent differences.
     '''
     is_diff = (s >= 1)
-    return ['background-color: orange' if v else '' for v in is_diff]
+    return ['background-color: #E2D4A8' if v else '' for v in is_diff]
 
 def highlight_set(s):
     '''
     Highlight calibration sets.
     '''
     is_set = (s == 'Set 1')
-    return ['background-color: aqua' if v else 'rgb(255,228,181)' for v in is_set]
+    return ['background-color: #A8E1BF' if v else 'background-color: #A4DDEF' for v in is_set]
 
 #%% Initial full calibration: Plot calibration curve
 plt.rcParams.update(plt.rcParamsDefault) # reset theme
@@ -94,7 +95,7 @@ plt.close()
 
 import base64
 data_uri = base64.b64encode(open('Graph1.png', 'rb').read()).decode('utf-8')
-img_tag1 = '<img src="data:image/png;base64, {0}" style="width: 50%"/>'.format(data_uri)
+img_tag1 = '<img src="data:image/png;base64, {0}" style="width: 30%"/>'.format(data_uri)
 
 #%% Initial full calibration: Plot IS recovery and TC concentration
 fig_width = len(df_spl) * 0.3 # figure size based on number of samples
@@ -126,7 +127,7 @@ plt.savefig('Graph2.png', dpi = 600, bbox_inches = 'tight')
 plt.close()
 
 data_uri = base64.b64encode(open('Graph2.png', 'rb').read()).decode('utf-8')
-img_tag2 = '<img src="data:image/png;base64, {0}" style="width: 85%"/>'.format(data_uri)
+img_tag2 = '<img src="data:image/png;base64, {0}" style="width: 75%"/>'.format(data_uri)
 
 #%% Split data to two sets
 # Split calibration data based on accuracy of calibration points
@@ -226,7 +227,7 @@ plt.close()
 # plt.show()
 
 data_uri = base64.b64encode(open('Graph3.png', 'rb').read()).decode('utf-8')
-img_tag3 = '<img src="data:image/png;base64, {0}" style="width: 70%"/>'.format(data_uri)
+img_tag3 = '<img src="data:image/png;base64, {0}" style="width: 45%"/>'.format(data_uri)
 
 #%% Export data
 df_spl_1['Set'] = 'Set 1'
@@ -261,6 +262,9 @@ df_comparison_sorted = df_comparison_sorted.rename(index=str,
     'Analyte_CalcConc':'Measured_TC_Conc_MassHunter'})
 df_comparison_sorted = df_comparison_sorted.loc[:, ['SampleID', 'IS_Recovery', 'Measured_TC_Conc_Uncorrected',
     'Measured_TC_Conc_MassHunter','Measured_TC_Conc_Corrected', 'Percent_Difference']]
+
+set_df = df_spl_combined.loc[:, ['SampleID', 'Response_Ratio', 'Set']]
+df_comparison_sorted = pd.merge(df_comparison_sorted, set_df, how='outer', on='SampleID')
 
 # Create a Pandas Excel writer using XlsxWriter as the engine.
 writer = pd.ExcelWriter(file_name + ' Results' + '.xlsx', engine='xlsxwriter')
@@ -330,102 +334,101 @@ html_df_comparison_sorted = df_comparison_sorted \
             'Measured_TC_Conc_Corrected' : 3,
             'Measured_TC_Conc_Uncorrected' : 3,
             'Percent_Difference' : 2,
+            'Response_Ratio' : 3,
             'Measured_TC_Conc_MassHunter' : 3}) \
     .style \
         .set_table_attributes('border="1" class="dataframe mystyle"') \
         .apply(highlight_difference, subset=['Percent_Difference']) \
+        .apply(highlight_set, subset=['Set']) \
         .format({'IS_Recovery' : '{:.0f}',
                 'Measured_TC_Conc_Corrected' : '{:.3f}',
                 'Measured_TC_Conc_Uncorrected' : '{:.3f}',
                 'Percent_Difference' : '{:.2f}',
+                'Response_Ratio' : '{:.3f}',
                 'Measured_TC_Conc_MassHunter' : '{:.3f}'}) \
         .render()
 
-html_df_spl_combined = df_spl_combined \
-    .round({'TC_Response' : 3,	
-        'IS_Response' : 3,
-        'Response_Ratio' : 3,	
-        'Measured_TC_Conc' : 3,	
-        'Measured_Conc_Ratio' : 3,	
-        'IS_Recovery' : 0}) \
-    .style \
-        .set_table_attributes('border="1" class="dataframe mystyle"') \
-        .apply(highlight_set, subset=['Set']) \
-        .format({'TC_Response' : '{:.3f}',	
-                'IS_Response' : '{:.3f}',
-                'Response_Ratio' : '{:.3f}',	
-                'Measured_TC_Conc' : '{:.3f}',	
-                'Measured_Conc_Ratio' : '{:.3f}',	
-                'IS_Recovery' : '{:.0f}'}) \
-        .render()
-
 #%% Table output
-#pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
 html_string = '''
 <html>
-  <head><title>Quantification Quality Control Report</title></head>
-  <link rel="stylesheet" type="text/css" href="df_style.css"/>
-  <body>
-    <h1 class="title">Quality Control Report</h1>
-    <h1>Sample Sequence: {header_info}</h1>
-        <p>Project: {project_info}</p>
-        <p>Matrix: {matrix_info}</p>
-        <p>Analyte: {analyte_info}
-        <p>Internal Standard Concentration: {IS_info} ng/mL</p>
-        <p>Nicotine quantification is reported as ng/mL in the autosampler vial. The concentration needs to be converted to nicotine mass (ng) prior to submission.</p>
-        <p>TC = Target Compound, IS = Internal Standard</p>
-    <h2>Initial uncorrected calibration</h2>
-        <h3>Uncorrected calibration curve accuracy</h3>
-            {table3}
-        <div class="box">
-            <div class="one_alt">
-                <h3>Sample distribution within uncorrected calibration range</h3>
-                    <div class="one_alt2">
-                    {plot1}
-                    </div>
-            </div>
-            <div class="two_alt">
-                <h3>Internal standard (IS) recovery and target compound (TC) concentration</h3>
-                    <p>IS recovery vs. TC concentration over the injection sequence.</p>
-                        {plot2}
-            </div>
-        </div>
-    <h2>Corrected calibration</h2>
-        <p>Data is split into two sets based on calibration point accuracy.</p>
-        <div class="box">
-        <div class="one">
+    <head>
+        <title>Quantification Quality Control Report</title>
+        <style>
+            .mystyle {{
+                font-size: 10pt;
+                font-family: monospace;
+                border-collapse: collapse; 
+                border: 1px solid silver;
+                text-align: right;
+            }}
+            .mystyle td, th {{
+                padding: 1px;
+            }}
+            .mystyle tr:nth-child(even) {{
+                background: #E0E0E0;
+            }}
+            .mystyle tr:hover {{
+                background: aqua;
+                cursor: pointer;
+            }} 
+            .title {{
+                color: #E41A1C;
+                font-size: 12pt;
+            }}
+            h1 {{
+                color: #377EB8;
+                font-family: sans-serif;
+            }}
+            h2 {{
+                text-decoration: underline;
+                font-family: sans-serif;
+            }}
+            h3 {{
+                font-family: sans-serif;
+            }}
+            p {{
+                font-family: sans-serif;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1 class="title">Quality Control Report</h1>
+        <h1>Sample Sequence: {header_info}</h1>
+            <p>Project: {project_info}</p>
+            <p>Matrix: {matrix_info}</p>
+            <p>Analyte: {analyte_info}
+            <p>Internal standard concentration in autosampler vial: {IS_info} ng/mL</p>
+            <p>Nicotine quantification is reported as ng/mL in the autosampler vial. The concentration needs to be converted to nicotine mass (ng) prior to submission.</p>
+            <p>TC = Target Compound, IS = Internal Standard</p>
+        <h2>Initial uncorrected calibration</h2>
+            <h3>Uncorrected calibration curve accuracy</h3>
+                {table1}
+            <h3>Sample distribution within uncorrected calibration range</h3>
+                {plot1}
+            <h3>Internal standard (IS) recovery and target compound (TC) concentration</h3>
+                <p>IS recovery vs. TC concentration over the injection sequence.</p>
+                {plot2}
+        <h2>Corrected calibration</h2>
+            <p>Data is split into two sets based on calibration point accuracy.</p>
             <h3>Calibration curve accuracy: Set 1</h3>
-                {table4}
+                {table2}
             <h3>Calibration curve accuracy: Set 2</h3>
-                {table5}
-        </div>
-        <div class="two">
+                {table3}
             <h3>Sample distribution within corrected calibration ranges</h3>
                 {plot3}
-        </div>
-        </div>
-     <div class="box">
-     <div class="one">   
-    <h2>Comparison of corrected and un-corrected data</h2>
-        <p>Sorted by percent difference. Includes comparison with Mass Hunter uncorrected data.</p> 
-                {table6}
-        </div>
-        <div class="two">
-    <h2>Samples in each of the corrected calibration curve ranges</h2>
-        <p>Sorted by set.</p>
-                {table7}
-        </div>
-        </div>
-  </body>
+        <h2>Comparison of corrected and un-corrected data</h2>
+            <p>Sorted by percent difference between the corrected and un-corrected data. Includes comparison with Mass Hunter uncorrected data, and samples in each of the corrected calibration curve ranges (sets).</p> 
+                {table4}
+    </body>
 </html>
 '''
-with open('Draft QC Report.html', 'w') as f:
-    f.write(html_string.format(table3=html_df_cal,
-        table4=html_df_cal_1,
-        table5=html_df_cal_2,
-        table6=html_df_comparison_sorted,
-        table7=html_df_spl_combined,
+
+with open(file_name + ' QC Report.html', 'w') as f:
+    f.write(html_string.format(table1=html_df_cal,
+        table2=html_df_cal_1,
+        table3=html_df_cal_2,
+        table4=html_df_comparison_sorted,
         plot1=img_tag1,
         plot2=img_tag2,
         plot3=img_tag3,
@@ -434,6 +437,10 @@ with open('Draft QC Report.html', 'w') as f:
         matrix_info=matrix_type,
         IS_info=IS_Conc,
         analyte_info=analyte))
+
+os.remove('Graph1.png')
+os.remove('Graph2.png')
+os.remove('Graph3.png')
 
 
 #%%
