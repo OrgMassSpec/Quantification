@@ -21,8 +21,8 @@
     options("width"=200)
     options(scipen=999)
 
-# source('Script - Nicotine.R')
-# rmarkdown::render("Script - Nicotine.R")
+# source('Script Nicotine Correction.R')
+# rmarkdown::render('Script Nicotine Correction.R')
 
 # Checklist: see OneNote Nicotine Quantification page for decisions.
 # 1. Enter project in title
@@ -47,11 +47,11 @@
 
 # Input variables
 
-    file_name   = 'Data Nicotine Template'  # input (.xlsx) and generated output (.csv) file name
+    file_name   = 'Script Nicotine Template'  # input (.xlsx) and generated output (.csv) file name
     intstd_conc = 5                         # internal standard concentration (ng/mL)
 
 #' # Uncorrected calibration 
-    x <- read_excel(str_c(file_name, '.xlsx', sheet = 'Sheet1')
+    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1')
 
     df_cal <-   x %>%
                 filter(Type == 'Cal') %>%
@@ -381,4 +381,4 @@ cat('R^2^ = ', signif(r_squared_2, 4))
 
 # Export results 
     df_spl_corrected$IS_Recovery <- round(df_spl_corrected$IS_Recovery, 0)
-    write_excel_csv(df_spl_corrected, str_c(file_name, '.csv))
+    write_excel_csv(df_spl_corrected, str_c(file_name, ' Result.csv'))
