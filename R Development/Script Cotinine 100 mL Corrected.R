@@ -35,20 +35,38 @@
 
 #' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
-#' __Instrument sequence:__???. 
-#'
-#' __Internal standard spike:__ ???, for a final concentration of 5 ng/mL.
-#'
 #' __Dilution:__ none. 
-#' 
-#' __Extraction volume:__ ??? mL. 
-#'
-#' __Results:__ reported as _nicotine concentration (ng/mL) x ??? mL = ng nicotine_.
 
 # Input variables
 
-    file_name   = 'Script Nicotine Template'  # input (.xlsx) and generated output (.csv) file name
-    intstd_conc = 5                         # internal standard concentration (ng/mL)
+    # instrumental sequence name
+    seq_name    = '???'
+
+    # input (.xlsx) and generated output (.csv) file name
+    file_name   = 'Script Nicotine Template'    
+
+    intstd_conc = 5     # internal standard concentration (ng/mL)
+    extract_vol = 3     # acetonitrile extraction volume (mL)
+
+#+ results='asis'
+cat('__Sequence Name:__ ', seq_name, '.', sep = '')
+#'
+
+#+ results='asis'
+cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
+#'
+
+#+ results='asis'
+cat('__Internal standard final concentration:__', intstd_conc, 'ng/mL.')
+#'
+
+#+ results='asis'
+cat('__Extraction volume:__', extract_vol, 'mL.')
+#'
+
+#+ results='asis'
+cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, ' mL = *ng nicotine*.', sep = '')
+#'
 
 #' # Uncorrected calibration 
     x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1')
@@ -352,7 +370,7 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     df_spl_comparison <-    df_spl_uncorrected %>%
                             full_join(df_spl_corrected, by = 'SampleID') %>%
                             full_join(df_spl_masshunter, by = 'SampleID') %>%
-                            mutate(Difference_Pct = abs((TC_Conc_Uncorrected - TC_Conc_Corrected) / TC_Conc_Corrected) * 100) %>%
+                            mutate(Difference_Pct = abs((TC_Conc_Corrected - TC_Conc_Uncorrected) / TC_Conc_Uncorrected) * 100) %>%
                             select('SampleID', 'IS_Recovery', 'TC_Conc_Uncorrected', 
                                 'TC_Conc_MassHunter', 'TC_Conc_Corrected', 'Set', 'Difference_Pct') %>%
                             arrange(desc(Difference_Pct))
