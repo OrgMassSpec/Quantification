@@ -212,6 +212,17 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
                 filter(Accuracy_Pct < 110 & Accuracy_Pct > 90) %>%
                 select('SampleID', 'TC_Response', 'IS_Response', 
                     'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    
+    # To use TC_Conc to split calibration
+    # df_cal_1 <- df_cal %>%
+    #     filter(TC_Conc <= 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    # 
+    # df_cal_2 <- df_cal %>%
+    #     filter(TC_Conc > 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
 
     selection_value <- last(df_cal_1$Response_Ratio) 
 
