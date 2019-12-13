@@ -1,5 +1,5 @@
 #' ---
-#' title: "Project: | Matrix: | Analyte: Nicotine"
+#' title: "Project: | Matrix: Urine, 2 mL volume | Analyte: Cotinine"
 #' author: "Nate Dodder"
 #' output:
 #'  html_document:
@@ -21,17 +21,17 @@
     options("width"=200)
     options(scipen=999)
 
-# source('Script Nicotine Correction.R')
-# rmarkdown::render('Script Nicotine Correction.R')
+# source('Cotinine_2mL_Correction.R')
+# rmarkdown::render('Cotinine_2mL_Correction.R')
 
-# Checklist: see OneNote Nicotine Quantification page for decisions.
+# Checklist:
 # 1. Enter project in title
 # 2. Enter matrix in title
-# 3. Enter instrument sequence name in header
-# 4. Enter internal standard spike concentration and volume in header
-# 5. Enter extraction volume in header (2x)
-# 6. Enter input file_name in input variables section 
-# 7. Verify intstd_conc in input variable section 
+# 3. Enter instrument sequence name
+# 4. Enter input file name
+# 5. Enter/check internal standard spike concentration and extraction volume
+# 6. Change script name in source() and rmarkdown::render().
+# 7. See OneNote quantification checklist.
 
 #' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
@@ -43,10 +43,10 @@
     seq_name    = '???'
 
     # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Script Nicotine Template'    
+    file_name   = 'Data - Cotinine 2 mL'    
 
     intstd_conc = 5     # internal standard concentration (ng/mL)
-    extract_vol = 3     # acetonitrile extraction volume (mL)
+    extract_vol = 2     # acetonitrile extraction volume (mL)
 
 #+ results='asis'
 cat('__Sequence Name:__ ', seq_name, '.', sep = '')
@@ -65,7 +65,7 @@ cat('__Extraction volume:__', extract_vol, 'mL.')
 #'
 
 #+ results='asis'
-cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, ' mL = *ng nicotine*.', sep = '')
+cat('__Results reported as:__ continine concentration (ng/mL) in urine (the same as the cotinine concentration in the autosampler vial).')
 #'
 
 #' # Uncorrected calibration 
@@ -122,7 +122,6 @@ cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, '
     mean_is_recovery <- mean(df_spl$IS_Recovery)
     mean_tc_conc <- mean(df_spl$Measured_TC_Conc)
 
-    # !!! TODO Unit test for this
     # Check for zero responses and set outputs to zero
     df_spl <-   df_spl %>%
                 mutate(Measured_TC_Conc = replace(Measured_TC_Conc, TC_Response == 0, 0)) %>%
@@ -348,7 +347,6 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     df_spl_2 <- mutate(df_spl_2, Set = 'Set 2')
     df_spl_c <- bind_rows(df_spl_1, df_spl_2)
 
-    # !!! TODO Unit test for this
     # Check for zero responses and set outputs to zero
     df_spl_c <-     df_spl_c %>%
                     mutate(Measured_TC_Conc = replace(Measured_TC_Conc, TC_Response == 0, 0)) %>%
@@ -384,18 +382,15 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     # Finalize units
     # Arrange in order of original sequence
     df_spl_corrected <- df_spl_corrected %>%
-                        rename(Nicotine_Conc_ng_per_mL = TC_Conc_Corrected) %>%
-                        mutate(Sample_Vol_mL = 3) %>%
-                        mutate(Nicotine_Mass_ng = Nicotine_Conc_ng_per_mL * Sample_Vol_mL) %>%
+                        rename(Cotinine_Conc_ng_per_mL_Urine= TC_Conc_Corrected) %>%
                         mutate(Batch = file_name) %>%
                         full_join(df_spl_order, by = 'SampleID') %>%
                         arrange(Order) %>%
-                        select('Batch', 'SampleID', 'IS_Recovery', 'Nicotine_Conc_ng_per_mL', 
-                            'Sample_Vol_mL', 'Nicotine_Mass_ng')
+                        select('Batch', 'SampleID', 'IS_Recovery', 'Cotinine_Conc_ng_per_mL_Urine')
                         
 #' ## Table: Results
 
-    kable(df_spl_corrected, digits = c(0, 0, 0, 2, 1, 2))
+    kable(df_spl_corrected, digits = c(0, 0, 0, 2))
 
 # Export results 
     df_spl_corrected$IS_Recovery <- round(df_spl_corrected$IS_Recovery, 0)

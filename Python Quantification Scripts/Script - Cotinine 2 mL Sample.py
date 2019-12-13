@@ -1,7 +1,7 @@
 #%% [markdown] 
-# # Quantify Nicotine (wipe, dust, wristband)
+# # Quantify Cotinine (2 mL urine sample)
 #
-# Sample is undiluted. The nicotine quantification is reported as ng/mL in the autosampler vial. This concentration needs to be converted to nicotine mass prior to submission.
+# Sample is undiluted. 100 uL of 0.1 ng/uL cotinine-d3, or 10 ng cotinine-d3, is added.
 #
 # Throughout code, TC = Target Compound, IS = Internal Standard
 
@@ -15,8 +15,8 @@ import altair as alt
 from vega_datasets import data
 
 # User variables
-file_name = 'Nicotine Template Test Data' # Input Excel filename
-analyte = 'Nicotine Conc. (ng/mL)' # Analyte concentration and units for export column title 
+file_name = 'Data - Cotinine 2 mL Template' # Input Excel filename
+analyte = 'Cotinine Conc. (ng/mL)' # Analyte concentration and units for export column title 
 IS_Conc = 5 # Internal standard concentration (ng/mL)
 
 #%% [markdown]
@@ -255,7 +255,6 @@ plt.close()
 #%% [markdown]
 # ## Export to Excel
 # Sample is not diluted. 
-# 
 
 #%% Export data
 df_spl_1['Set'] = 'Set 1'

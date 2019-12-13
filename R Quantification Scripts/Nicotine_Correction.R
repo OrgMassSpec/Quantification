@@ -21,17 +21,17 @@
     options("width"=200)
     options(scipen=999)
 
-# source('Script Nicotine Correction.R')
-# rmarkdown::render('Script Nicotine Correction.R')
+# source('Nicotine_Correction.R')
+# rmarkdown::render('Nicotine_Correction.R')
 
-# Checklist: see OneNote Nicotine Quantification page for decisions.
+# Checklist:
 # 1. Enter project in title
 # 2. Enter matrix in title
-# 3. Enter instrument sequence name in header
-# 4. Enter internal standard spike concentration and volume in header
-# 5. Enter extraction volume in header (2x)
-# 6. Enter input file_name in input variables section 
-# 7. Verify intstd_conc in input variable section 
+# 3. Enter instrument sequence name
+# 4. Enter input file name
+# 5. Enter/check internal standard spike concentration and extraction volume
+# 6. Change script name in source() and rmarkdown::render().
+# 7. See OneNote quantification checklist.
 
 #' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
@@ -43,7 +43,7 @@
     seq_name    = '???'
 
     # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Script Nicotine Template'    
+    file_name   = 'Data - Nicotine Correction'    
 
     intstd_conc = 5     # internal standard concentration (ng/mL)
     extract_vol = 3     # acetonitrile extraction volume (mL)
@@ -122,7 +122,6 @@ cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, '
     mean_is_recovery <- mean(df_spl$IS_Recovery)
     mean_tc_conc <- mean(df_spl$Measured_TC_Conc)
 
-    # !!! TODO Unit test for this
     # Check for zero responses and set outputs to zero
     df_spl <-   df_spl %>%
                 mutate(Measured_TC_Conc = replace(Measured_TC_Conc, TC_Response == 0, 0)) %>%
@@ -212,6 +211,17 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
                 filter(Accuracy_Pct < 110 & Accuracy_Pct > 90) %>%
                 select('SampleID', 'TC_Response', 'IS_Response', 
                     'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    
+    # To use TC_Conc to split calibration
+    # df_cal_1 <- df_cal %>%
+    #     filter(TC_Conc <= 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    # 
+    # df_cal_2 <- df_cal %>%
+    #     filter(TC_Conc > 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
 
     selection_value <- last(df_cal_1$Response_Ratio) 
 
@@ -348,7 +358,6 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     df_spl_2 <- mutate(df_spl_2, Set = 'Set 2')
     df_spl_c <- bind_rows(df_spl_1, df_spl_2)
 
-    # !!! TODO Unit test for this
     # Check for zero responses and set outputs to zero
     df_spl_c <-     df_spl_c %>%
                     mutate(Measured_TC_Conc = replace(Measured_TC_Conc, TC_Response == 0, 0)) %>%
@@ -385,7 +394,7 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     # Arrange in order of original sequence
     df_spl_corrected <- df_spl_corrected %>%
                         rename(Nicotine_Conc_ng_per_mL = TC_Conc_Corrected) %>%
-                        mutate(Sample_Vol_mL = 3) %>%
+                        mutate(Sample_Vol_mL = extract_vol) %>%
                         mutate(Nicotine_Mass_ng = Nicotine_Conc_ng_per_mL * Sample_Vol_mL) %>%
                         mutate(Batch = file_name) %>%
                         full_join(df_spl_order, by = 'SampleID') %>%
