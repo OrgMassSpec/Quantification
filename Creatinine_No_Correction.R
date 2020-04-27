@@ -227,6 +227,7 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
 
     # Finalize units
     # Arrange in order of original sequence
+    df_spl$SampleID <- as.character(df_spl$SampleID)
     df_spl <-   df_spl %>%
                 rename(Creatinine_Conc_ug_per_mL_Vial = Measured_TC_Conc) %>%
                 mutate(Dilution_Factor = dilution_fac) %>%

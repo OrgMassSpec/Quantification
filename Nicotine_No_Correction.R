@@ -222,6 +222,7 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
 
     # Finalize units
     # Arrange in order of original sequence
+    df_spl$SampleID <- as.character(df_spl$SampleID)
     df_spl <-   df_spl %>%
                 rename(Nicotine_Conc_ng_per_mL = Measured_TC_Conc) %>%
                 mutate(Sample_Vol_mL = extract_vol) %>%
