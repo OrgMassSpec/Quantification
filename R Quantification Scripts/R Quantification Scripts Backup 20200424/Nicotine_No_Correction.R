@@ -1,5 +1,5 @@
 #' ---
-#' title: "Project: | Matrix: Urine | Analyte: Creatinine"
+#' title: "Project: | Matrix: | Analyte: Nicotine"
 #' author: "Nate Dodder"
 #' output:
 #'  html_document:
@@ -11,72 +11,65 @@
 #'    mathjax: null
 #' ---
 
-#+ echo=FALSE, include=FALSE
+#+ echo=FALSE
 # Setup
     library(tidyverse)
     library(readxl)
     library(knitr)
     knitr::opts_chunk$set(echo = FALSE)
     knitr::opts_chunk$set(comment = NA)
-    options("width" = 200)
-    options(scipen = 999)
+    options("width"=200)
+    options(scipen=999)
 
-# source('Creatinine_No_Correction.R')
-# rmarkdown::render('Creatinine_No_Correction.R')
+# source('Nicotine_No_Correction.R')
+# rmarkdown::render('Nicotine_No_Correction.R')
 
 # Checklist:
-# Enter project in title
-# Enter matrix in title
-# Enter input file name
-# Enter/check internal standard spike concentration and extraction volume
-# Optional: Change script name in source() and rmarkdown::render()
-# Check for notes on individual samples (dilutions, etc) and adjust
-# Add results to shared drive
-# Send using email template
+# 1. Enter project in title
+# 2. Enter matrix in title
+# 3. Enter instrument sequence name
+# 4. Enter input file name
+# 5. Enter/check internal standard spike concentration and extraction volume
+# 6. Change script name in source() and rmarkdown::render().
+# 7. See OneNote quantification checklist.
 
-#' Quantification quality control for creatinine LC/MS/MS measurements.
+#' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
-#' __Dilution:__ Yes (corrected). 
+#' __Dilution:__ none. 
 
 # Input variables
 
-    # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Creatinine_No_Correction_Input'    
+    # instrumental sequence name
+    seq_name    = '???'
 
-    intstd_conc = 0.1     # internal standard concentration (ug/mL)
-    extract_vol = 50      # acetonitrile extraction volume (mL)
-    dilution_fac = 10000  # dilution factor 
+    # input (.xlsx) and generated output (.csv) file name
+    file_name   = 'Data - Nicotine No Correction'    
+
+    intstd_conc = 5     # internal standard concentration (ng/mL)
+    extract_vol = 3     # acetonitrile extraction volume (mL)
+
+#+ results='asis'
+cat('__Sequence Name:__ ', seq_name, '.', sep = '')
+#'
 
 #+ results='asis'
 cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
 #'
 
 #+ results='asis'
-cat('__Internal standard final concentration:__', intstd_conc, 'ug/mL.')
+cat('__Internal standard final concentration:__', intstd_conc, 'ng/mL.')
 #'
 
 #+ results='asis'
-cat('__Extraction volume:__', extract_vol, 'uL.')
+cat('__Extraction volume:__', extract_vol, 'mL.')
 #'
 
 #+ results='asis'
-cat('__Dilution Factor:__', dilution_fac, '.')
-#'
-
-#+ results='asis'
-cat('__Results reported as:__ creatinine concentration (ug/mL) in autosampler vial x ', dilution_fac, ' = *creatinine concentration (ug/mL) in urine*.', sep = '')
+cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, ' mL = *ng nicotine*.', sep = '')
 #'
 
 #' # Uncorrected calibration 
-
-    column_names <- c("SampleID", "DataFile", "Type", "Level", "DateTime", "AcqMethodFile", "DataAnalysisMethodFile",
-                      "Comment", "TC_Conc", "Analyte_RT", "TC_Response", "Analyte_ManualIntegration", "Analyte_CalcConc",
-                      "Analyte_FinalConc", "Analyte_Accuracy", "IS_ReponseRatio", "Analyte_Transition1_Ratio",
-                      "Analyte_Transition1_ManualIntegration", "Analyte_Transition2_Ratio",
-                      "Analyte_Transition2_ManualIntegration", "IS_RT", "IS_Response", "IS_Transition1_Ratio",
-                      "IS_Transition1_ManualIntegration", "IS_Transition2_Ratio", "IS_Transition2_ManualIntegration")
-
-    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1', col_names = column_names, skip = 2)
+    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1')
 
     df_cal <-   x %>%
                 filter(Type == 'Cal') %>%
@@ -112,12 +105,13 @@ cat('__Results reported as:__ creatinine concentration (ug/mL) in autosampler vi
     mean_is_response    <- mean(df_cal$IS_Response)
 
 #' ## Table: Uncorrected accuracy
+#' If accuracy is within 90% to 110% for all calibration points, correction is not required. 
 
     df_cal_print <- df_cal %>%
                     select(-SampleID) %>%
                     select(TC_Conc, everything())
 
-    kable(df_cal_print, digits = c(3, 0, 0, 2, 2, 3, 0))
+    kable(df_cal_print, digits = c(1, 0, 0, 2, 2, 1, 0))
 
 # Sample concentration
     df_spl <-   df_spl %>%
@@ -213,7 +207,7 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
                             rename(TC_Conc_Uncorrected = Measured_TC_Conc)
     df_spl_uncorrected$SampleID <- as.character(df_spl_uncorrected$SampleID)
 
-    # Merge
+    # Merge original, corrected, and MassHunter data
     df_spl_comparison <-    df_spl_uncorrected %>%
                             full_join(df_spl_masshunter, by = 'SampleID') %>%
                             select('SampleID', 'IS_Recovery', 'TC_Conc_Uncorrected', 
@@ -228,14 +222,14 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
     # Finalize units
     # Arrange in order of original sequence
     df_spl <-   df_spl %>%
-                rename(Creatinine_Conc_ug_per_mL_Vial = Measured_TC_Conc) %>%
-                mutate(Dilution_Factor = dilution_fac) %>%
-                mutate(Creatinine_Conc_ug_per_mL_Urine = Creatinine_Conc_ug_per_mL_Vial * Dilution_Factor) %>%
+                rename(Nicotine_Conc_ng_per_mL = Measured_TC_Conc) %>%
+                mutate(Sample_Vol_mL = extract_vol) %>%
+                mutate(Nicotine_Mass_ng = Nicotine_Conc_ng_per_mL * Sample_Vol_mL) %>%
                 mutate(Batch = file_name) %>%
                 full_join(df_spl_order, by = 'SampleID') %>%
                 arrange(Order) %>%
-                select('Batch', 'SampleID', 'IS_Recovery', 'Creatinine_Conc_ug_per_mL_Vial', 
-                    'Dilution_Factor', 'Creatinine_Conc_ug_per_mL_Urine')
+                select('Batch', 'SampleID', 'IS_Recovery', 'Nicotine_Conc_ng_per_mL', 
+                    'Sample_Vol_mL', 'Nicotine_Mass_ng')
                         
 #' ## Table: Results
 

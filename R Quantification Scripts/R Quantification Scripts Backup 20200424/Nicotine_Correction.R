@@ -1,5 +1,5 @@
 #' ---
-#' title: "Project: | Matrix: Urine, 2 mL volume | Analyte: Cotinine"
+#' title: "Project: | Matrix: | Analyte: Nicotine"
 #' author: "Nate Dodder"
 #' output:
 #'  html_document:
@@ -11,40 +11,46 @@
 #'    mathjax: null
 #' ---
 
-#+ echo=FALSE, include=FALSE
+#+ echo=FALSE
 # Setup
     library(tidyverse)
     library(readxl)
     library(knitr)
     knitr::opts_chunk$set(echo = FALSE)
     knitr::opts_chunk$set(comment = NA)
-    options("width" = 200)
-    options(scipen = 999)
+    options("width"=200)
+    options(scipen=999)
 
-# source('Cotinine_2mL_Correction.R')
-# rmarkdown::render('Cotinine_2mL_Correction.R')
+# source('Nicotine_Correction.R')
+# rmarkdown::render('Nicotine_Correction.R')
 
 # Checklist:
-# Enter project in title
-# Enter matrix in title
-# Enter input file name
-# Enter/check internal standard spike concentration and extraction volume
-# Optional: Change script name in source() and rmarkdown::render()
-# Check for notes on individual samples (dilutions, etc) and adjust
-# Add results to shared drive
-# Send using email template
+# 1. Enter project in title
+# 2. Enter matrix in title
+# 3. Enter instrument sequence name
+# 4. Enter input file name
+# 5. Enter/check internal standard spike concentration and extraction volume
+# 6. Change script name in source() and rmarkdown::render().
+# 7. See OneNote quantification checklist.
 
-#' Quantification quality control for cotinine LC/MS/MS measurements.
+#' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
 #' __Dilution:__ none. 
 
 # Input variables
 
+    # instrumental sequence name
+    seq_name    = '???'
+
     # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Cotinine_2mL_Correction_Input'    
+    file_name   = 'Data - Nicotine Correction'    
 
     intstd_conc = 5     # internal standard concentration (ng/mL)
-    extract_vol = 2     # acetonitrile extraction volume (mL)
+    extract_vol = 3     # acetonitrile extraction volume (mL)
+
+#+ results='asis'
+cat('__Sequence Name:__ ', seq_name, '.', sep = '')
+#'
 
 #+ results='asis'
 cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
@@ -59,18 +65,11 @@ cat('__Extraction volume:__', extract_vol, 'mL.')
 #'
 
 #+ results='asis'
-cat('__Results reported as:__ continine concentration (ng/mL) in urine (the same as the cotinine concentration in the autosampler vial).')
+cat('__Results reported as:__ nicotine concentration (ng/mL) x ', extract_vol, ' mL = *ng nicotine*.', sep = '')
 #'
 
 #' # Uncorrected calibration 
-    
-    column_names <- c("SampleID", "DataFile", "Type", "Level", "DateTime", "AcqMethodFile", "DataAnalysisMethodFile",
-                      "Comment", "TC_Conc", "Analyte_RT", "TC_Response", "Analyte_ManualIntegration", "Analyte_CalcConc",
-                      "Analyte_FinalConc", "Analyte_Accuracy", "IS_ReponseRatio", "Analyte_Transition1_Ratio",
-                      "Analyte_Transition1_ManualIntegration", "IS_RT", "IS_Response", "IS_Transition1_Ratio",
-                      "IS_Transition1_ManualIntegration")
-
-    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1', col_names = column_names, skip = 2)
+    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1')
 
     df_cal <-   x %>%
                 filter(Type == 'Cal') %>%
@@ -212,6 +211,17 @@ cat('Mean recovery = ', signif(mean_is_recovery, 2))
                 filter(Accuracy_Pct < 110 & Accuracy_Pct > 90) %>%
                 select('SampleID', 'TC_Response', 'IS_Response', 
                     'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    
+    # To use TC_Conc to split calibration
+    # df_cal_1 <- df_cal %>%
+    #     filter(TC_Conc <= 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
+    # 
+    # df_cal_2 <- df_cal %>%
+    #     filter(TC_Conc > 1) %>%
+    #     select('SampleID', 'TC_Response', 'IS_Response', 
+    #            'TC_Conc', 'Response_Ratio', 'Conc_Ratio')
 
     selection_value <- last(df_cal_1$Response_Ratio) 
 
@@ -383,15 +393,18 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     # Finalize units
     # Arrange in order of original sequence
     df_spl_corrected <- df_spl_corrected %>%
-                        rename(Cotinine_Conc_ng_per_mL_Urine= TC_Conc_Corrected) %>%
+                        rename(Nicotine_Conc_ng_per_mL = TC_Conc_Corrected) %>%
+                        mutate(Sample_Vol_mL = extract_vol) %>%
+                        mutate(Nicotine_Mass_ng = Nicotine_Conc_ng_per_mL * Sample_Vol_mL) %>%
                         mutate(Batch = file_name) %>%
                         full_join(df_spl_order, by = 'SampleID') %>%
                         arrange(Order) %>%
-                        select('Batch', 'SampleID', 'IS_Recovery', 'Cotinine_Conc_ng_per_mL_Urine')
+                        select('Batch', 'SampleID', 'IS_Recovery', 'Nicotine_Conc_ng_per_mL', 
+                            'Sample_Vol_mL', 'Nicotine_Mass_ng')
                         
 #' ## Table: Results
 
-    kable(df_spl_corrected, digits = c(0, 0, 0, 2))
+    kable(df_spl_corrected, digits = c(0, 0, 0, 2, 1, 2))
 
 # Export results 
     df_spl_corrected$IS_Recovery <- round(df_spl_corrected$IS_Recovery, 0)

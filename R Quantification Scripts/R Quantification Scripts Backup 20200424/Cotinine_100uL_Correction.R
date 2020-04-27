@@ -1,5 +1,5 @@
 #' ---
-#' title: "Project: | Matrix: Urine, 2 mL volume | Analyte: Cotinine"
+#' title: "Project: | Matrix: Active smoker urine, 100 uL volume | Analyte: Cotinine"
 #' author: "Nate Dodder"
 #' output:
 #'  html_document:
@@ -11,7 +11,7 @@
 #'    mathjax: null
 #' ---
 
-#+ echo=FALSE, include=FALSE
+#+ echo=FALSE
 # Setup
     library(tidyverse)
     library(readxl)
@@ -21,30 +21,30 @@
     options("width" = 200)
     options(scipen = 999)
 
-# source('Cotinine_2mL_Correction.R')
-# rmarkdown::render('Cotinine_2mL_Correction.R')
+# source('Cotinine_100uL_Correction.R')
+# rmarkdown::render('Cotinine_100uL_Correction.R')
 
 # Checklist:
-# Enter project in title
-# Enter matrix in title
-# Enter input file name
-# Enter/check internal standard spike concentration and extraction volume
-# Optional: Change script name in source() and rmarkdown::render()
-# Check for notes on individual samples (dilutions, etc) and adjust
-# Add results to shared drive
-# Send using email template
+# 1. Enter project in title
+# 2. Enter matrix in title
+# 3. Enter instrument sequence name
+# 4. Enter input file name
+# 5. Enter/check internal standard spike concentration and extraction volume
+# 6. Change script name in source() and rmarkdown::render().
+# 7. See OneNote quantification checklist.
 
-#' Quantification quality control for cotinine LC/MS/MS measurements.
+#' Quantification quality control for nicotine LC/MS/MS measurements.
 #'
 #' __Dilution:__ none. 
 
 # Input variables
 
     # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Cotinine_2mL_Correction_Input'    
+    file_name   = 'Cotinine_100uL_Correction_Input'    
 
     intstd_conc = 5     # internal standard concentration (ng/mL)
-    extract_vol = 2     # acetonitrile extraction volume (mL)
+    extract_vol = 0.1   # acetonitrile extraction volume (mL)
+    dilution_fac = 20   # dilution factor (100 uL to 2 mL)
 
 #+ results='asis'
 cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
@@ -59,7 +59,11 @@ cat('__Extraction volume:__', extract_vol, 'mL.')
 #'
 
 #+ results='asis'
-cat('__Results reported as:__ continine concentration (ng/mL) in urine (the same as the cotinine concentration in the autosampler vial).')
+cat('__Dilution Factor:__', dilution_fac, '.')
+#'
+
+#+ results='asis'
+cat('__Results reported as:__ cotinine concentration (ng/mL) in autosampler vial x ', dilution_fac, ' = *cotinine concentration (ng/mL) in urine*.', sep = '')
 #'
 
 #' # Uncorrected calibration 
@@ -69,7 +73,7 @@ cat('__Results reported as:__ continine concentration (ng/mL) in urine (the same
                       "Analyte_FinalConc", "Analyte_Accuracy", "IS_ReponseRatio", "Analyte_Transition1_Ratio",
                       "Analyte_Transition1_ManualIntegration", "IS_RT", "IS_Response", "IS_Transition1_Ratio",
                       "IS_Transition1_ManualIntegration")
-
+    
     x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1', col_names = column_names, skip = 2)
 
     df_cal <-   x %>%
@@ -383,15 +387,18 @@ cat('R^2^ = ', signif(r_squared_2, 4))
     # Finalize units
     # Arrange in order of original sequence
     df_spl_corrected <- df_spl_corrected %>%
-                        rename(Cotinine_Conc_ng_per_mL_Urine= TC_Conc_Corrected) %>%
+                        rename(Cotinine_Conc_ng_per_mL_Vial = TC_Conc_Corrected) %>%
+                        mutate(Dilution_Factor = dilution_fac) %>%
+                        mutate(Cotinine_Conc_ng_per_mL_Urine = Cotinine_Conc_ng_per_mL_Vial * Dilution_Factor) %>%
                         mutate(Batch = file_name) %>%
                         full_join(df_spl_order, by = 'SampleID') %>%
                         arrange(Order) %>%
-                        select('Batch', 'SampleID', 'IS_Recovery', 'Cotinine_Conc_ng_per_mL_Urine')
+                        select('Batch', 'SampleID', 'IS_Recovery', 'Cotinine_Conc_ng_per_mL_Vial', 
+                            'Dilution_Factor', 'Cotinine_Conc_ng_per_mL_Urine')
                         
 #' ## Table: Results
 
-    kable(df_spl_corrected, digits = c(0, 0, 0, 2))
+    kable(df_spl_corrected, digits = c(0, 0, 0, 2, 1, 2))
 
 # Export results 
     df_spl_corrected$IS_Recovery <- round(df_spl_corrected$IS_Recovery, 0)

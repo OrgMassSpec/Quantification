@@ -11,47 +11,41 @@
 #'    mathjax: null
 #' ---
 
-#+ echo=FALSE
+#+ echo=FALSE, include=FALSE
 # Setup
     library(tidyverse)
     library(readxl)
     library(knitr)
     knitr::opts_chunk$set(echo = FALSE)
     knitr::opts_chunk$set(comment = NA)
-    options("width"=200)
-    options(scipen=999)
+    options("width" = 200)
+    options(scipen = 999)
 
 # source('Cotinine_100uL_Correction.R')
 # rmarkdown::render('Cotinine_100uL_Correction.R')
 
 # Checklist:
-# 1. Enter project in title
-# 2. Enter matrix in title
-# 3. Enter instrument sequence name
-# 4. Enter input file name
-# 5. Enter/check internal standard spike concentration and extraction volume
-# 6. Change script name in source() and rmarkdown::render().
-# 7. See OneNote quantification checklist.
+# Enter project in title
+# Enter matrix in title
+# Enter input file name
+# Enter/check internal standard spike concentration and extraction volume
+# Optional: Change script name in source() and rmarkdown::render()
+# Check for notes on individual samples (dilutions, etc) and adjust
+# Add results to shared drive
+# Send using email template
 
-#' Quantification quality control for nicotine LC/MS/MS measurements.
+#' Quantification quality control for cotinine LC/MS/MS measurements.
 #'
-#' __Dilution:__ none. 
+#' __Dilution:__ Yes (corrected). 
 
 # Input variables
 
-    # instrumental sequence name
-    seq_name    = '???'
-
     # input (.xlsx) and generated output (.csv) file name
-    file_name   = 'Data - Cotinine 100 uL'    
+    file_name   = 'Cotinine_100uL_Correction_Input'    
 
     intstd_conc = 5     # internal standard concentration (ng/mL)
     extract_vol = 0.1   # acetonitrile extraction volume (mL)
     dilution_fac = 20   # dilution factor (100 uL to 2 mL)
-
-#+ results='asis'
-cat('__Sequence Name:__ ', seq_name, '.', sep = '')
-#'
 
 #+ results='asis'
 cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
@@ -74,7 +68,13 @@ cat('__Results reported as:__ cotinine concentration (ng/mL) in autosampler vial
 #'
 
 #' # Uncorrected calibration 
-    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1')
+    column_names <- c("SampleID", "DataFile", "Type", "Level", "DateTime", "AcqMethodFile", "DataAnalysisMethodFile",
+                      "Comment", "TC_Conc", "Analyte_RT", "TC_Response", "Analyte_ManualIntegration", "Analyte_CalcConc",
+                      "Analyte_FinalConc", "Analyte_Accuracy", "IS_ReponseRatio", "Analyte_Transition1_Ratio",
+                      "Analyte_Transition1_ManualIntegration", "IS_RT", "IS_Response", "IS_Transition1_Ratio",
+                      "IS_Transition1_ManualIntegration")
+
+    x <- read_excel(str_c(file_name, '.xlsx'), sheet = 'Sheet1', col_names = column_names, skip = 2)
 
     df_cal <-   x %>%
                 filter(Type == 'Cal') %>%
