@@ -48,7 +48,7 @@
     dilution_fac = 10000  # dilution factor 
 
 #+ results='asis'
-cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, '.csv.', sep = '')
+cat('__Input data file name:__ ', file_name, '.xlsx. and __Reported as:__ ', file_name, 'Result.csv.', sep = '')
 #'
 
 #+ results='asis'
@@ -60,7 +60,7 @@ cat('__Extraction volume:__', extract_vol, 'uL.')
 #'
 
 #+ results='asis'
-cat('__Dilution Factor:__', dilution_fac, '.')
+cat('__Dilution Factor:__', dilution_fac)
 #'
 
 #+ results='asis'
